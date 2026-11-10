@@ -304,6 +304,122 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
+/* Orçamento & Saldo Próprio */
+.personal-budget-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.budget-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.budget-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.budget-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.budget-badge.badge-ok {
+  background-color: var(--accent-emerald-subtle);
+  color: var(--accent-emerald);
+}
+
+.budget-badge.badge-alert {
+  background-color: var(--accent-rose-subtle);
+  color: var(--accent-rose);
+}
+
+.budget-badge.badge-neutral {
+  background-color: var(--bg-subtle);
+  color: var(--text-muted);
+}
+
+.budget-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.budget-progress-bar {
+  width: 100%;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.budget-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease;
+}
+
+.budget-progress-fill.fill-normal {
+  background: linear-gradient(90deg, #10b981, #6366f1);
+}
+
+.budget-progress-fill.fill-alert {
+  background: linear-gradient(90deg, #f59e0b, #f43f5e);
+}
+
+.budget-progress-labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.budget-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.budget-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.budget-meta-lbl {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.budget-meta-val {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-meta-val.spent {
+  color: #e4e4e7;
+}
+
 .summary-footer {
   display: flex;
   align-items: center;
@@ -483,6 +599,131 @@ select {
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 32px;
+}
+
+/* ==========================================================================
+   CONTAS FIXAS
+   ========================================================================== */
+.fixed-bills-card {
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.fixed-bills-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.fixed-bills-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.fixed-bills-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fixed-bill-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  gap: 12px;
+  transition: var(--transition);
+}
+
+.fixed-bill-item:hover {
+  border-color: var(--border-active);
+}
+
+.fixed-bill-item.paid {
+  border-color: rgba(16, 185, 129, 0.25);
+  background-color: rgba(16, 185, 129, 0.04);
+}
+
+.fixed-bill-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.fixed-bill-status-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.fixed-bill-status-btn.paid {
+  background-color: var(--accent-emerald-subtle);
+  color: var(--accent-emerald);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.fixed-bill-status-btn.pending {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.fixed-bill-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fixed-bill-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fixed-bill-due {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.fixed-bill-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.fixed-bill-amount {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.fixed-bill-empty {
+  padding: 20px 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-md);
 }
 
 /* ==========================================================================

@@ -34,6 +34,8 @@ function getDefaultPresets() {
 // ==========================================================================
 const DEFAULT_STATE = {
   invoiceTitle: 'Fatura do Cartão',
+  personalBudget: 0,
+  fixedBills: [],
   personalExpenses: [],
   people: [
     {
@@ -125,6 +127,7 @@ class AppStorage {
         ...DEFAULT_STATE,
         ...loadedData,
         people: peopleWithPresets,
+        fixedBills: loadedData.fixedBills || [],
         personalExpenses: loadedData.personalExpenses || []
       };
     }
@@ -218,16 +221,128 @@ function triggerHaptic() {
 // ==========================================================================
 function renderPersonalExpenses() {
   const listEl = document.getElementById('personalExpensesList');
+  const remainingEl = document.getElementById('personalRemainingAmount');
+  const initialBudgetEl = document.getElementById('personalInitialBudget');
+  const fixedBillsTotalEl = document.getElementById('personalFixedBillsTotal');
   const totalAmountEl = document.getElementById('personalTotalAmount');
   const totalItemsEl = document.getElementById('personalTotalItems');
   const badgeCountEl = document.getElementById('personalBadgeCount');
+  const statusBadge = document.getElementById('budgetStatusBadge');
+  const progressWrap = document.getElementById('budgetProgressWrap');
+  const progressFill = document.getElementById('budgetProgressFill');
+  const spentPercentEl = document.getElementById('budgetSpentPercent');
+  const remainingPercentEl = document.getElementById('budgetRemainingPercent');
+  const btnEditBudgetLabel = document.getElementById('btnEditBudgetLabel');
 
   const items = appState.personalExpenses || [];
-  const total = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const totalVariable = items.reduce((sum, item) => sum + (item.amount || 0), 0);
 
-  totalAmountEl.textContent = formatCurrency(total);
-  totalItemsEl.textContent = `${items.length} ${items.length === 1 ? 'gasto' : 'gastos'}`;
-  badgeCountEl.textContent = items.length;
+  const fixedBills = appState.fixedBills || [];
+  const totalFixed = fixedBills.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const paidFixedCount = fixedBills.filter(b => b.paid).length;
+
+  const totalCommitted = totalFixed + totalVariable;
+  const initialBudget = appState.personalBudget || 0;
+  const remaining = initialBudget - totalCommitted;
+
+  if (fixedBillsTotalEl) fixedBillsTotalEl.textContent = formatCurrency(totalFixed);
+  if (totalAmountEl) totalAmountEl.textContent = formatCurrency(totalVariable);
+  if (totalItemsEl) totalItemsEl.textContent = `${items.length} ${items.length === 1 ? 'gasto' : 'gastos'}`;
+  if (badgeCountEl) badgeCountEl.textContent = items.length;
+  if (initialBudgetEl) initialBudgetEl.textContent = formatCurrency(initialBudget);
+
+  if (initialBudget > 0) {
+    if (btnEditBudgetLabel) btnEditBudgetLabel.textContent = 'Alterar Saldo';
+    if (progressWrap) progressWrap.style.display = 'flex';
+
+    if (remaining >= 0) {
+      if (remainingEl) {
+        remainingEl.textContent = formatCurrency(remaining);
+        remainingEl.style.color = '#ffffff';
+      }
+      if (statusBadge) {
+        statusBadge.textContent = 'Dentro do saldo';
+        statusBadge.className = 'budget-badge badge-ok';
+      }
+      const spentPct = Math.min(100, Math.round((totalCommitted / initialBudget) * 100));
+      if (progressFill) {
+        progressFill.style.width = `${spentPct}%`;
+        progressFill.className = 'budget-progress-fill fill-normal';
+      }
+      if (spentPercentEl) spentPercentEl.textContent = `${spentPct}% do saldo comprometido`;
+      if (remainingPercentEl) remainingPercentEl.textContent = `${formatCurrency(remaining)} restante`;
+    } else {
+      // Saldo estourado
+      if (remainingEl) {
+        remainingEl.textContent = formatCurrency(remaining);
+        remainingEl.style.color = '#f43f5e';
+      }
+      if (statusBadge) {
+        statusBadge.textContent = 'Saldo estourado';
+        statusBadge.className = 'budget-badge badge-alert';
+      }
+      if (progressFill) {
+        progressFill.style.width = '100%';
+        progressFill.className = 'budget-progress-fill fill-alert';
+      }
+      if (spentPercentEl) spentPercentEl.textContent = `Estourou em ${formatCurrency(Math.abs(remaining))}`;
+      if (remainingPercentEl) remainingPercentEl.textContent = '0% restante';
+    }
+  } else {
+    // Sem saldo definido ainda
+    if (btnEditBudgetLabel) btnEditBudgetLabel.textContent = 'Definir Saldo';
+    if (progressWrap) progressWrap.style.display = 'none';
+    if (remainingEl) {
+      remainingEl.textContent = formatCurrency(totalCommitted > 0 ? -totalCommitted : 0);
+      remainingEl.style.color = totalCommitted > 0 ? '#f43f5e' : '#ffffff';
+    }
+    if (statusBadge) {
+      statusBadge.textContent = totalCommitted > 0 ? 'Sem saldo definido' : 'Sem saldo';
+      statusBadge.className = 'budget-badge badge-neutral';
+    }
+  }
+
+  // Renderiza Contas Fixas
+  const fixedListEl = document.getElementById('fixedBillsList');
+  const fixedSubtitleEl = document.getElementById('fixedBillsSummarySubtitle');
+
+  if (fixedSubtitleEl) {
+    fixedSubtitleEl.textContent = `${formatCurrency(totalFixed)} · ${fixedBills.length} ${fixedBills.length === 1 ? 'conta' : 'contas'} (${paidFixedCount} pagas)`;
+  }
+
+  if (fixedListEl) {
+    if (fixedBills.length === 0) {
+      fixedListEl.innerHTML = `
+        <div class="fixed-bill-empty">
+          Nenhuma conta fixa cadastrada. Toque em "+ Nova Conta" para adicionar aluguel, internet, luz, academia, etc.
+        </div>
+      `;
+    } else {
+      fixedListEl.innerHTML = fixedBills.map(b => `
+        <div class="fixed-bill-item ${b.paid ? 'paid' : ''}">
+          <div class="fixed-bill-left">
+            <button type="button" class="fixed-bill-status-btn ${b.paid ? 'paid' : 'pending'}" onclick="toggleFixedBillPaid('${b.id}')" title="Marcar como ${b.paid ? 'pendente' : 'paga'}">
+              ${b.paid ? '✔ Paga' : '⏳ Pendente'}
+            </button>
+            <div class="fixed-bill-details">
+              <span class="fixed-bill-title">${escapeHtml(b.description)}</span>
+              ${b.dueDay ? `<span class="fixed-bill-due">Vencimento todo dia ${escapeHtml(b.dueDay.toString())}</span>` : ''}
+            </div>
+          </div>
+          <div class="fixed-bill-right">
+            <span class="fixed-bill-amount">${formatCurrency(b.amount)}</span>
+            <button class="delete-btn" onclick="deleteFixedBill('${b.id}')" title="Excluir conta fixa" aria-label="Excluir">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
 
   if (items.length === 0) {
     listEl.innerHTML = `
@@ -278,6 +393,28 @@ window.deletePersonalExpense = function(id) {
   renderPersonalExpenses();
   showToast('Gasto removido');
   triggerHaptic();
+};
+
+window.toggleFixedBillPaid = function(billId) {
+  const bill = (appState.fixedBills || []).find(b => b.id === billId);
+  if (!bill) return;
+  bill.paid = !bill.paid;
+  AppStorage.saveState();
+  renderPersonalExpenses();
+  showToast(bill.paid ? `Conta "${bill.description}" marcada como paga` : `Conta "${bill.description}" pendente`);
+  triggerHaptic();
+};
+
+window.deleteFixedBill = function(billId) {
+  const bill = (appState.fixedBills || []).find(b => b.id === billId);
+  if (!bill) return;
+  if (confirm(`Excluir conta fixa "${bill.description}"?`)) {
+    appState.fixedBills = appState.fixedBills.filter(b => b.id !== billId);
+    AppStorage.saveState();
+    renderPersonalExpenses();
+    showToast('Conta fixa excluída');
+    triggerHaptic();
+  }
 };
 
 // ==========================================================================
@@ -977,6 +1114,97 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('Gastos próprios limpos');
     }
   });
+
+  // 6.1 Saldo / Orçamento Próprio
+  const btnEditBudget = document.getElementById('btnEditBudget');
+  const formSetBudget = document.getElementById('formSetBudget');
+  const inputBudgetAmount = document.getElementById('inputBudgetAmount');
+
+  if (inputBudgetAmount) maskCurrency(inputBudgetAmount);
+
+  if (btnEditBudget) {
+    btnEditBudget.addEventListener('click', () => {
+      if (inputBudgetAmount) {
+        const cur = appState.personalBudget || 0;
+        if (cur > 0) {
+          const cents = Math.round(cur * 100).toString();
+          const val = (parseInt(cents, 10) / 100).toFixed(2);
+          const parts = val.split('.');
+          const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+          inputBudgetAmount.value = `R$ ${integerPart},${parts[1]}`;
+        } else {
+          inputBudgetAmount.value = '';
+        }
+      }
+      openModal('modalSetBudget');
+    });
+  }
+
+  if (formSetBudget) {
+    formSetBudget.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = parseCurrencyInput(inputBudgetAmount.value);
+      appState.personalBudget = val;
+      AppStorage.saveState();
+      renderPersonalExpenses();
+      closeModal('modalSetBudget');
+      showToast(val > 0 ? `Saldo definido: ${formatCurrency(val)}` : 'Saldo zerado');
+      triggerHaptic();
+    });
+  }
+
+  // 6.2 Contas Fixas
+  const btnOpenAddFixedBill = document.getElementById('btnOpenAddFixedBill');
+  const formAddFixedBill = document.getElementById('formAddFixedBill');
+  const fixedBillDesc = document.getElementById('fixedBillDesc');
+  const fixedBillAmount = document.getElementById('fixedBillAmount');
+  const fixedBillDueDay = document.getElementById('fixedBillDueDay');
+
+  if (fixedBillAmount) maskCurrency(fixedBillAmount);
+
+  if (btnOpenAddFixedBill) {
+    btnOpenAddFixedBill.addEventListener('click', () => {
+      if (fixedBillDesc) fixedBillDesc.value = '';
+      if (fixedBillAmount) fixedBillAmount.value = '';
+      if (fixedBillDueDay) fixedBillDueDay.value = '';
+      openModal('modalAddFixedBill');
+    });
+  }
+
+  if (formAddFixedBill) {
+    formAddFixedBill.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const desc = fixedBillDesc.value.trim();
+      const amount = parseCurrencyInput(fixedBillAmount.value);
+      const dueDay = fixedBillDueDay.value ? parseInt(fixedBillDueDay.value, 10) : null;
+
+      if (!desc) {
+        fixedBillDesc.focus();
+        return;
+      }
+      if (amount <= 0) {
+        fixedBillAmount.focus();
+        showToast('Informe um valor válido');
+        return;
+      }
+
+      if (!appState.fixedBills) appState.fixedBills = [];
+
+      appState.fixedBills.push({
+        id: 'fix_' + Date.now(),
+        description: desc,
+        amount,
+        dueDay,
+        paid: false
+      });
+
+      AppStorage.saveState();
+      renderPersonalExpenses();
+      closeModal('modalAddFixedBill');
+      showToast(`Conta fixa "${desc}" adicionada`);
+      triggerHaptic();
+    });
+  }
 
   // 7. Formulário: Nova Pessoa
   const formAddPerson = document.getElementById('formAddPerson');

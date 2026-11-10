@@ -77,16 +77,78 @@
 
     <!-- ================= ABA 1: GASTOS PRÓPRIOS ================= -->
     <section class="tab-pane active" id="panePersonal">
-      <!-- Card Resumo Próprio -->
-      <div class="summary-card">
-        <div class="summary-header">
-          <span class="summary-label">Total de Gastos Próprios</span>
-          <span class="summary-count" id="personalTotalItems">0 compras</span>
+      <!-- Card Resumo Próprio com Saldo / Orçamento -->
+      <div class="summary-card personal-budget-card">
+        <!-- Topo: Saldo Restante em Destaque -->
+        <div class="budget-top-row">
+          <div>
+            <div class="budget-label-row">
+              <span class="summary-label">Saldo Restante</span>
+              <span class="budget-badge" id="budgetStatusBadge">Sem saldo definido</span>
+            </div>
+            <div class="summary-amount highlight-amount" id="personalRemainingAmount">R$ 0,00</div>
+          </div>
+          
+          <button class="btn btn-secondary btn-sm" id="btnEditBudget" title="Definir ou alterar saldo disponível">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+            <span id="btnEditBudgetLabel">Definir Saldo</span>
+          </button>
         </div>
-        <div class="summary-amount" id="personalTotalAmount">R$ 0,00</div>
+
+        <!-- Barra de Progresso do Saldo -->
+        <div class="budget-progress-wrap" id="budgetProgressWrap" style="display: none;">
+          <div class="budget-progress-bar">
+            <div class="budget-progress-fill" id="budgetProgressFill" style="width: 0%;"></div>
+          </div>
+          <div class="budget-progress-labels">
+            <span id="budgetSpentPercent">0% do saldo gasto</span>
+            <span id="budgetRemainingPercent">100% restante</span>
+          </div>
+        </div>
+
+        <!-- Grade Comparativa: Saldo Inicial vs Contas Fixas vs Gastos Variáveis -->
+        <div class="budget-meta-grid">
+          <div class="budget-meta-item">
+            <span class="budget-meta-lbl">Saldo Inicial</span>
+            <span class="budget-meta-val" id="personalInitialBudget">R$ 0,00</span>
+          </div>
+          <div class="budget-meta-item">
+            <span class="budget-meta-lbl">Contas Fixas</span>
+            <span class="budget-meta-val" id="personalFixedBillsTotal">R$ 0,00</span>
+          </div>
+          <div class="budget-meta-item">
+            <span class="budget-meta-lbl">Gastos Variáveis</span>
+            <span class="budget-meta-val spent" id="personalTotalAmount">R$ 0,00</span>
+          </div>
+        </div>
+
         <div class="summary-footer">
-          <span class="summary-period" id="personalPeriodLabel">Mês atual</span>
+          <span class="summary-period" id="personalPeriodLabel">Controle pessoal</span>
           <button class="link-btn" id="btnClearPersonal" title="Limpar gastos próprios">Limpar tudo</button>
+        </div>
+      </div>
+
+      <!-- Card: Contas Fixas do Mês -->
+      <div class="card fixed-bills-card">
+        <div class="fixed-bills-header">
+          <div>
+            <h2 class="section-title" style="margin-bottom: 2px;">Contas Fixas</h2>
+            <span class="fixed-bills-subtitle" id="fixedBillsSummarySubtitle">R$ 0,00 · 0 contas cadastradas</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btnOpenAddFixedBill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>+ Nova Conta</span>
+          </button>
+        </div>
+
+        <div class="fixed-bills-list" id="fixedBillsList">
+          <!-- Renderizado dinamicamente via JS -->
         </div>
       </div>
 
@@ -257,6 +319,72 @@
 
     <p class="love-footer-text">te amo amor <span class="heart-pulse">❤️</span></p>
   </footer>
+
+  <!-- ================= MODAL: DEFINIR SALDO ================= -->
+  <div class="modal-backdrop" id="modalSetBudget">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">Definir Saldo Disponível</h3>
+        <button class="modal-close-btn" data-close-modal="modalSetBudget" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <form id="formSetBudget">
+        <div class="form-field">
+          <label for="inputBudgetAmount">Qual é o seu saldo / orçamento para gastar?</label>
+          <input type="text" id="inputBudgetAmount" class="currency-mask" inputmode="numeric" placeholder="R$ 0,00" required autofocus autocomplete="off">
+          <span style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px;">
+            Conforme você for adicionando gastos, o saldo restante será deduzido automaticamente.
+          </span>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" data-close-modal="modalSetBudget">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Saldo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADICIONAR CONTA FIXA ================= -->
+  <div class="modal-backdrop" id="modalAddFixedBill">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">Nova Conta Fixa</h3>
+        <button class="modal-close-btn" data-close-modal="modalAddFixedBill" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <form id="formAddFixedBill">
+        <div class="form-field">
+          <label for="fixedBillDesc">Nome da Conta</label>
+          <input type="text" id="fixedBillDesc" placeholder="Ex: Aluguel, Internet, Luz, Netflix, Academia" required autofocus autocomplete="off">
+        </div>
+
+        <div class="form-grid" style="margin-top: 10px;">
+          <div class="form-field">
+            <label for="fixedBillAmount">Valor Mensal (R$)</label>
+            <input type="text" id="fixedBillAmount" class="currency-mask" inputmode="numeric" placeholder="R$ 0,00" required autocomplete="off">
+          </div>
+
+          <div class="form-field">
+            <label for="fixedBillDueDay">Dia de Vencimento</label>
+            <input type="number" id="fixedBillDueDay" min="1" max="31" placeholder="Ex: 10">
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" data-close-modal="modalAddFixedBill">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Conta Fixa</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- ================= MODAL: ADICIONAR PESSOA ================= -->
   <div class="modal-backdrop" id="modalAddPerson">
