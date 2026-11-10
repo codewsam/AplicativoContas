@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Contas & Cartão</title>
+  <meta name="description" content="Controle de gastos pessoais e divisão de cartão por pessoa">
+  <meta name="theme-color" content="#09090b">
+  
+  <!-- PWA & Mobile Web App -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Contas">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header / App Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="14" x="2" y="5" rx="3"/>
+            <line x1="2" x2="22" y1="10" y2="10"/>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <h1 class="brand-title">Contas & Cartão</h1>
+          <span class="sync-indicator" id="syncStatus">
+            <span class="sync-dot"></span> Dados salvos
+          </span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="icon-btn" id="btnOpenBackup" title="Backup e Dados" aria-label="Backup e Dados">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" x2="12" y1="15" y2="3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navegação por Abas -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" id="tabPersonal" data-tab="personal">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span>Gastos Próprios</span>
+        <span class="tab-badge" id="personalBadgeCount">0</span>
+      </button>
+
+      <button class="tab-btn" id="tabCard" data-tab="card">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span>Divisão do Cartão</span>
+        <span class="tab-badge" id="cardBadgeCount">0</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Container Principal -->
+  <main class="main-content">
+
+    <!-- ================= ABA 1: GASTOS PRÓPRIOS ================= -->
+    <section class="tab-pane active" id="panePersonal">
+      <!-- Card Resumo Próprio -->
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-label">Total de Gastos Próprios</span>
+          <span class="summary-count" id="personalTotalItems">0 compras</span>
+        </div>
+        <div class="summary-amount" id="personalTotalAmount">R$ 0,00</div>
+        <div class="summary-footer">
+          <span class="summary-period" id="personalPeriodLabel">Mês atual</span>
+          <button class="link-btn" id="btnClearPersonal" title="Limpar gastos próprios">Limpar tudo</button>
+        </div>
+      </div>
+
+      <!-- Formulário de Adicionar Gasto Próprio -->
+      <div class="card form-card">
+        <h2 class="section-title">Adicionar Gasto</h2>
+        <form id="formPersonal" autocomplete="off">
+          <div class="form-grid">
+            <div class="form-field full-width">
+              <label for="personalDesc">Onde comprou / Descrição</label>
+              <input type="text" id="personalDesc" placeholder="Ex: Supermercado, Farmácia, Uber" required>
+            </div>
+
+            <div class="form-field">
+              <label for="personalAmount">Valor (R$)</label>
+              <input type="text" id="personalAmount" inputmode="numeric" placeholder="R$ 0,00" required>
+            </div>
+
+            <div class="form-field">
+              <label for="personalCategory">Categoria</label>
+              <select id="personalCategory">
+                <option value="Mercado">Mercado</option>
+                <option value="Alimentação">Alimentação</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Lazer">Lazer</option>
+                <option value="Saúde">Saúde</option>
+                <option value="Casa">Casa</option>
+                <option value="Serviços">Serviços</option>
+                <option value="Outros" selected>Outros</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="personalDate">Data</label>
+              <input type="date" id="personalDate">
+            </div>
+
+            <div class="form-field align-end">
+              <button type="submit" class="btn btn-primary full-width">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" x2="12" y1="5" y2="19"/>
+                  <line x1="5" x2="19" y1="12" y2="12"/>
+                </svg>
+                <span>Salvar Gasto</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Lista de Gastos Próprios -->
+      <div class="section-header-row">
+        <h2 class="section-title">Histórico de Gastos</h2>
+      </div>
+
+      <div class="expenses-list" id="personalExpensesList">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+    </section>
+
+    <!-- ================= ABA 2: DIVISÃO DO CARTÃO ================= -->
+    <section class="tab-pane" id="paneCard">
+      <!-- Card Resumo Fatura Cartão -->
+      <div class="summary-card card-invoice-summary">
+        <div class="invoice-summary-top">
+          <div>
+            <span class="summary-label">Total Geral do Cartão</span>
+            <div class="summary-amount highlight-amount" id="cardGrandTotal">R$ 0,00</div>
+          </div>
+          <div class="invoice-stat-box">
+            <span class="stat-num" id="cardPeopleCount">0</span>
+            <span class="stat-lbl">Pessoas</span>
+          </div>
+        </div>
+
+        <div class="invoice-meta-row">
+          <input type="text" class="invoice-title-input" id="invoiceTitle" value="Fatura do Cartão" placeholder="Título da Fatura (ex: Fatura Nubank)">
+          <span class="invoice-items-count" id="cardTotalPurchases">0 compras no total</span>
+        </div>
+
+        <!-- Ações Principais da Fatura -->
+        <div class="invoice-actions-row">
+          <button class="btn btn-primary" id="btnDownloadTable">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" x2="12" y1="15" y2="3"/>
+            </svg>
+            <span>Baixar Tabela</span>
+          </button>
+
+          <button class="btn btn-secondary" id="btnCopyWhatsApp">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+            <span>Copiar p/ WhatsApp</span>
+          </button>
+
+          <button class="btn btn-outline" id="btnOpenAddPerson">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" x2="12" y1="5" y2="19"/>
+              <line x1="5" x2="19" y1="12" y2="12"/>
+            </svg>
+            <span>Nova Pessoa</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de Atalhos de Pessoas (Mobile Quick Switch) -->
+      <div class="people-pills-bar" id="peoplePillsBar">
+        <!-- Renderizado dinamicamente -->
+      </div>
+
+      <!-- Área de Colunas de Pessoas -->
+      <div class="people-board-wrapper">
+        <div class="people-board" id="peopleBoard">
+          <!-- Colunas renderizadas dinamicamente via JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="app-page-footer">
+    <!-- Guia iPhone Tela de Início -->
+    <div class="ios-install-guide">
+      <div class="ios-guide-header">
+        <svg class="ios-apple-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.76 1.06-1.82.94-2.87-.91.04-2.02.61-2.67 1.37-.58.67-1.09 1.76-.95 2.79 1.02.08 2.05-.53 2.68-1.29z"/>
+        </svg>
+        <span class="ios-guide-title">Como fixar na Tela Inicial do iPhone</span>
+      </div>
+      
+      <div class="ios-steps">
+        <div class="ios-step-item">
+          <span class="ios-step-num">1</span>
+          <span>No Safari, toque em <strong>Compartilhar</strong></span>
+          <span class="ios-badge-icon" title="Ícone de Compartilhar">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" x2="12" y1="2" y2="15"/>
+            </svg>
+          </span>
+        </div>
+
+        <div class="ios-step-arrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" x2="19" y1="12" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </div>
+
+        <div class="ios-step-item">
+          <span class="ios-step-num">2</span>
+          <span>Role e selecione <strong>"Adicionar à Tela de Início"</strong></span>
+          <span class="ios-badge-icon" title="Adicionar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="18" height="18" x="3" y="3" rx="4"/>
+              <line x1="12" x2="12" y1="8" y2="16"/>
+              <line x1="8" x2="16" y1="12" y2="12"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <p class="love-footer-text">te amo amor <span class="heart-pulse">❤️</span></p>
+  </footer>
+
+  <!-- ================= MODAL: ADICIONAR PESSOA ================= -->
+  <div class="modal-backdrop" id="modalAddPerson">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">Nova Pessoa no Cartão</h3>
+        <button class="modal-close-btn" data-close-modal="modalAddPerson" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <form id="formAddPerson">
+        <div class="form-field">
+          <label for="newPersonName">Nome da Pessoa</label>
+          <input type="text" id="newPersonName" placeholder="Ex: Samuel, Mariana, Lucas..." required autofocus>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" data-close-modal="modalAddPerson">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Adicionar Coluna</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CONFIGURAR PESSOA E ATALHOS ================= -->
+  <div class="modal-backdrop" id="modalConfigPerson">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">Configurar Pessoa</h3>
+        <button class="modal-close-btn" data-close-modal="modalConfigPerson" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <input type="hidden" id="configPersonId">
+
+      <div class="config-section">
+        <div class="form-field">
+          <label for="configPersonName">Nome</label>
+          <input type="text" id="configPersonName" required>
+        </div>
+
+        <div class="form-field" style="margin-top: 12px;">
+          <label>Cor de Identificação</label>
+          <div class="color-picker-row" id="configColorPicker">
+            <!-- Renderizado via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção de Atalhos / Gastos Repetidos -->
+      <div class="config-section" style="margin-top: 18px;">
+        <div class="config-section-header">
+          <label style="font-weight: 700; color: #ffffff;">Gastos Frequentes / Atalhos Rápidos</label>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Aparecem como botões na coluna</span>
+        </div>
+
+        <!-- Lista de atalhos existentes -->
+        <div class="presets-manage-list" id="configPresetsList">
+          <!-- Renderizado via JS -->
+        </div>
+
+        <!-- Adicionar novo atalho -->
+        <div class="add-preset-box">
+          <div class="add-preset-grid">
+            <input type="text" id="newPresetName" placeholder="Nome (ex: Cartão, Mercado, Uber)" autocomplete="off">
+            <input type="text" id="newPresetAmount" class="currency-mask" inputmode="numeric" placeholder="R$ fixo (opcional)" autocomplete="off">
+            <button type="button" class="btn btn-secondary btn-sm" id="btnAddNewPreset">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Adicionar</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-close-modal="modalConfigPerson">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnSaveConfigPerson">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: BAIXAR TABELA / EXPORTAÇÃO ================= -->
+  <div class="modal-backdrop" id="modalDownload">
+    <div class="modal-sheet modal-large">
+      <div class="modal-header">
+        <h3 class="modal-title">Baixar Tabela de Gastos</h3>
+        <button class="modal-close-btn" data-close-modal="modalDownload" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="export-actions-bar">
+        <button class="btn btn-primary" id="btnExportImage">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+            <circle cx="9" cy="9" r="2"/>
+            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+          </svg>
+          <span>Baixar Imagem (PNG)</span>
+        </button>
+
+        <button class="btn btn-secondary" id="btnShareNative">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"/>
+            <circle cx="6" cy="12" r="3"/>
+            <circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/>
+            <line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>
+          </svg>
+          <span>Compartilhar</span>
+        </button>
+
+        <button class="btn btn-outline" id="btnExportCSV">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="8" x2="16" y1="13" y2="13"/>
+            <line x1="8" x2="16" y1="17" y2="17"/>
+          </svg>
+          <span>Baixar CSV</span>
+        </button>
+      </div>
+
+      <!-- Preview do Recibo/Tabela (área capturada para PNG) -->
+      <div class="receipt-preview-container">
+        <div class="receipt-card" id="receiptRenderArea">
+          <div class="receipt-header">
+            <div class="receipt-logo-title">
+              <div class="receipt-icon-badge">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="14" x="2" y="5" rx="3"/>
+                  <line x1="2" x2="22" y1="10" y2="10"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="receipt-invoice-title" id="receiptTitle">Fatura do Cartão</h4>
+                <div class="receipt-date" id="receiptDate">Novembro 2026</div>
+              </div>
+            </div>
+            <div class="receipt-grand-badge">
+              <span class="receipt-grand-label">TOTAL GERAL</span>
+              <span class="receipt-grand-val" id="receiptTotalAmount">R$ 0,00</span>
+            </div>
+          </div>
+
+          <!-- Tabela de resumo por pessoa -->
+          <div class="receipt-section-title">Resumo por Pessoa</div>
+          <table class="receipt-table" id="receiptSummaryTable">
+            <thead>
+              <tr>
+                <th>Pessoa</th>
+                <th>Compras</th>
+                <th style="text-align: right;">Total a Pagar</th>
+                <th style="text-align: right;">% da Fatura</th>
+              </tr>
+            </thead>
+            <tbody id="receiptSummaryBody">
+              <!-- Renderizado via JS -->
+            </tbody>
+          </table>
+
+          <!-- Detalhamento de cada pessoa -->
+          <div class="receipt-section-title" style="margin-top: 18px;">Discriminação de Compras</div>
+          <div class="receipt-details-grid" id="receiptDetailsGrid">
+            <!-- Renderizado via JS -->
+          </div>
+
+          <div class="receipt-footer">
+            <span>Calculado com Contas & Cartão</span>
+            <span id="receiptGeneratedAt">Data e hora</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: BACKUP E DADOS ================= -->
+  <div class="modal-backdrop" id="modalBackup">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">Backup e Armazenamento</h3>
+        <button class="modal-close-btn" data-close-modal="modalBackup" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" x2="6" y1="6" y2="18"/>
+            <line x1="6" x2="18" y1="6" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="storage-info-box">
+        <div class="storage-status-row">
+          <span class="storage-status-title">Status da Persistência</span>
+          <span class="badge-status" id="persistStatusBadge">Ativo</span>
+        </div>
+        <p class="storage-desc">Seus dados ficam gravados simultaneamente no navegador e no banco de dados local (IndexedDB) para garantir que nada seja perdido.</p>
+      </div>
+
+      <div class="backup-actions-list">
+        <button class="btn btn-outline full-width" id="btnExportJSON">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" x2="12" y1="15" y2="3"/>
+          </svg>
+          <span>Fazer Backup (Exportar JSON)</span>
+        </button>
+
+        <label class="btn btn-outline full-width file-input-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" x2="12" y1="3" y2="15"/>
+          </svg>
+          <span>Restaurar Backup (Importar JSON)</span>
+          <input type="file" id="fileImportJSON" accept=".json" style="display: none;">
+        </label>
+
+        <button class="btn btn-danger-outline full-width" id="btnResetAll">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"/>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+          </svg>
+          <span>Zerar Todos os Dados</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast de Notificações -->
+  <div class="toast" id="toast">Ação concluída com sucesso</div>
+
+  <!-- Scripts -->
+  <script src="html2canvas.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
