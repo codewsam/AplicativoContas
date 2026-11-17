@@ -32,19 +32,3 @@ Aplicativo web progressivo (PWA), mobile-first, focado em agilidade de preenchim
 - Funciona 100% offline (PWA com Service Worker).
 
 ---
-
-## 📱 Como Abrir e Usar no Celular
-
-### Opção 1: Abrir no Computador
-Basta dar dois cliques no arquivo `index.html`.
-
-### Opção 2: Acessar pelo Celular na Rede Wi-Fi
-Se o celular estiver conectado no mesmo Wi-Fi do computador:
-```powershell
-python -m http.server 8080 --directory "\\micro7\2023-2024-A\Engenheiros 2026\Samuel\Web\appcontas"
-```
-E acessar no navegador do celular pelo IP da sua máquina (ex: `http://192.168.x.x:8080`).
-
-Para instalar no celular como aplicativo:
-- **No iPhone (Safari)**: Toque no botão Compartilhar ➔ *Adicionar à Tela de Início*.
-- **No Android (Chrome)**: Toque nos três pontinhos ➔ *Instalar aplicativo* ou *Adicionar à tela inicial*.
